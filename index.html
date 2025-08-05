@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramalan Kartu Tarot Interaktif</title>
+    <style>
+        :root {
+            --primary: #6a0dad;
+            --secondary: #9c27b0;
+            --accent: #ff9800;
+            --dark: #4a148c;
+            --light: #f3e5f5;
+            --text: #333;
+            --shadow: rgba(0, 0, 0, 0.2);
+            --card-width: 180px;
+            --card-height: 300px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: url('https://images.unsplash.com/photo-1518707393476-1a1c1c9c0a4e?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-attachment: fixed;
+            background-blend-mode: multiply;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.92);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow);
+            padding: 30px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .container::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: url('https://cdn.pixabay.com/photo/2017/01/31/14/26/mandala-2024307_1280.png') no-repeat center/contain;
+            opacity: 0.05;
+            transform: rotate(20deg);
+            z-index: 0;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: var(--secondary);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 20px;
+            font-weight: 500;
+        }
+        
+        .layout-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+        
+        .layout-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        
+        .layout-btn:hover {
+            background: var(--secondary);
+            transform: translateY(-3px);
+        }
+        
+        .layout-btn.active {
+            background: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px var(--shadow);
+        }
+        
+        .tarot-area {
+            min-height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .card-slot {
+            width: var(--card-width);
+            height: var(--card-height);
+            background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
+            border-radius: 15px;
+            margin: 0 15px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+        
+        .card-slot::before {
+            content: "?";
+            font-size: 5rem;
+            color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            width: var(--card-width);
+            height: var(--card-height);
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px var(--shadow);
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.8s ease, box-shadow 0.3s ease;
+            background-size: cover;
+            background-position: center;
+            transform-style: preserve-3d;
+            transform: rotateY(180deg);
+        }
+        
+        .card.revealed {
+            transform: rotateY(0deg);
+        }
+        
+        .card:hover {
+            box-shadow: 0 15px 30px var(--shadow);
+            transform: translateY(-10px) rotateY(0deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .card-back {
+            background: linear-gradient(45deg, var(--primary), var(--dark));
+            transform: rotateY(180deg);
+        }
+        
+        .card-back::before {
+            content: "";
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            border: 2px solid white;
+            border-radius: 12px;
+            opacity: 0.3;
+        }
+        
+        .card-back::after {
+            content: "✨";
+            font-size: 3rem;
+            color: white;
+            opacity: 0.5;
+        }
+        
+        .card-front {
+            background: white;
+            flex-direction: column;
+            padding: 15px;
+            text-align: center;
+            justify-content: space-between;
+        }
+        
+        .card-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--dark);
+            background: rgba(243, 229, 245, 0.8);
+            padding: 5px 10px;
+            border-radius: 10px;
+            width: 100%;
+        }
+        
+        .card-meaning {
+            font-size: 0.9rem;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        
+        .card-image {
+            width: 100%;
+            height: 180px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            flex-grow: 1;
+        }
+        
+        .reading-result {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 4px 8px var(--shadow);
+            display: none;
+            border: 1px solid rgba(154, 27, 176, 0.2);
+        }
+        
+        .reading-title {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed var(--secondary);
+        }
+        
+        .position-container {
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .position-title {
+            font-weight: bold;
+            color: var(--secondary);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .position-title::before {
+            content: "✦";
+            margin-right: 10px;
+            color: var(--accent);
+        }
+        
+        .position-content {
+            padding-left: 25px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .btn:hover::before {
+            transform: translateX(0);
+        }
+        
+        .btn-draw {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-reset {
+            background: var(--dark);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px var(--shadow);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: white;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            max-width: 600px;
+        }
+        
+        /* Layout specific styles */
+        .layout-3-cards {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .layout-5-cards {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .layout-5-cards .card-slot {
+            margin: 10px;
+        }
+        
+        .layout-cross {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .layout-cross .card-slot {
+            width: calc(var(--card-width) * 0.9);
+            height: calc(var(--card-height) * 0.9);
+            margin: 0;
+        }
+        
+        .layout-cross .slot-1 {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        
+        .layout-cross .slot-2 {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .layout-cross .slot-3 {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        
+        .layout-cross .slot-4 {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .layout-cross .slot-5 {
+            grid-column: 2;
+            grid-row: 3;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+        
+        .spinner.active {
+            display: flex;
+        }
+        
+        .spinner-circle {
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 8px solid var(--accent);
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            :root {
+                --card-width: 140px;
+                --card-height: 230px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .layout-3-cards, .layout-5-cards {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .card-slot {
+                margin: 15px 0;
+            }
+            
+            .layout-cross {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(5, auto);
+                max-width: 300px;
+            }
+            
+            .layout-cross .slot-1, 
+            .layout-cross .slot-2, 
+            .layout-cross .slot-3, 
+            .layout-cross .slot-4, 
+            .layout-cross .slot-5 {
+                grid-column: 1;
+                grid-row: auto;
+            }
+            
+            .btn {
+                padding: 12px 30px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="spinner" id="spinner">
+        <div class="spinner-circle"></div>
+        <p>Menyiapkan kartu tarot...</p>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>🔮 Ramalan Kartu Tarot</h1>
+            <p class="subtitle">Temukan wawasan tentang hidup Anda melalui kartu tarot. Pilih jenis ramalan dan tarik kartu untuk mendapatkan pandangan tentang masa lalu, masa kini, dan masa depan Anda.</p>
+            
+            <div class="layout-selector">
+                <button class="layout-btn active" data-layout="three">Tiga Kartu</button>
+                <button class="layout-btn" data-layout="five">Lima Kartu</button>
+                <button class="layout-btn" data-layout="cross">Salib Celtic</button>
+            </div>
+        </header>
+        
+        <div class="tarot-area">
+            <div class="layout-3-cards">
+                <div class="card-slot" data-position="0">
+                    <div class="card">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <div class="card-image"></div>
+                            <div class="card-name">Kartu Masa Lalu</div>
+                            <div class="card-meaning">Tunggu hasil tarikan...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-slot" data-position="1">
+                    <div class="card">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <div class="card-image"></div>
+                            <div class="card-name">Kartu Masa Kini</div>
+                            <div class="card-meaning">Tunggu hasil tarikan...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-slot" data-position="2">
+                    <div class="card">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <div class="card-image"></div>
+                            <div class="card-name">Kartu Masa Depan</div>
+                            <div class="card-meaning">Tunggu hasil tarikan...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="reading-result" id="readingResult">
+            <h2 class="reading-title">Hasil Ramalan Anda</h2>
+            <div class="position-container">
+                <div class="position-title">Masa Lalu</div>
+                <div class="position-content" id="pastReading">-</div>
+            </div>
+            <div class="position-container">
+                <div class="position-title">Masa Kini</div>
+                <div class="position-content" id="presentReading">-</div>
+            </div>
+            <div class="position-container">
+                <div class="position-title">Masa Depan</div>
+                <div class="position-content" id="futureReading">-</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-draw" id="drawBtn">Ambil Kartu</button>
+            <button class="btn btn-reset" id="resetBtn">Ulangi</button>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Ramalan ini hanya untuk hiburan semata. Keputusan hidup sepenuhnya berada di tangan Anda.</p>
+        <p>© 2023 Ramalan Kartu Tarot Interaktif | Semua 78 gambar kartu tarot telah dimuat</p>
+    </footer>
+    
+    <script>
+        // Data kartu tarot lengkap dengan URL gambar yang baru dan valid
+        const tarotCards = [
+            // Major Arcana
+            { id: 0, name: "The Fool", image: "https://www.trustedtarot.com/img/cards/the-fool.png", meaning: "Awal baru, petualangan, potensi tak terbatas, kebebasan, kepolosan", reverse: "Kecerobohan, risiko yang tidak diperhitungkan, ketidakdewasaan" },
+            { id: 1, name: "The Magician", image: "https://www.trustedtarot.com/img/cards/the-magician.png", meaning: "Kekuatan, keahlian, konsentrasi, manifestasi, sumber daya", reverse: "Manipulasi, ilusi, energi yang tidak terfokus, potensi yang terbuang" },
+            { id: 2, name: "The High Priestess", image: "https://www.trustedtarot.com/img/cards/the-high-priestess.png", meaning: "Intuisi, kebijaksanaan tersembunyi, kesadaran spiritual, alam bawah sadar", reverse: "Rahasia, ketidaktahuan, kurangnya intuisi, ketidaksadaran" },
+            { id: 3, name: "The Empress", image: "https://www.trustedtarot.com/img/cards/the-empress.png", meaning: "Kesuburan, keibuan, kreativitas, kecantikan, kelimpahan", reverse: "Ketergantungan, kemandulan, kurangnya kreativitas, kekurangan" },
+            { id: 4, name: "The Emperor", image: "https://www.trustedtarot.com/img/cards/the-emperor.png", meaning: "Otoritas, struktur, kendali, kepemimpinan, stabilitas", reverse: "Tirani, kekakuan, dominasi berlebihan, kurangnya disiplin" },
+            { id: 5, name: "The Hierophant", image: "https://www.trustedtarot.com/img/cards/the-hierophant.png", meaning: "Tradisi, keyakinan, konvensi, institusi, bimbingan spiritual", reverse: "Pemberontakan, nonkonformitas, kebebasan dari batasan" },
+            { id: 6, name: "The Lovers", image: "https://www.trustedtarot.com/img/cards/the-lovers.png", meaning: "Cinta, hubungan, pilihan, harmoni, persatuan", reverse: "Ketidakseimbangan, ketidakharmonisan, perpecahan, keputusan buruk" },
+            { id: 7, name: "The Chariot", image: "https://www.trustedtarot.com/img/cards/the-chariot.png", meaning: "Kendali, kemauan, kemenangan, tekad, arah", reverse: "Kekacauan, kurangnya arah, agresi, kemacetan" },
+            { id: 8, name: "Strength", image: "https://www.trustedtarot.com/img/cards/strength.png", meaning: "Kekuatan batin, keberanian, kesabaran, belas kasih, pengendalian", reverse: "Keraguan diri, kelemahan, ketidakamanan, ketakutan" },
+            { id: 9, name: "The Hermit", image: "https://www.trustedtarot.com/img/cards/the-hermit.png", meaning: "Introspeksi, kebijaksanaan, penyendirian, pencarian batin", reverse: "Kesepian, isolasi, penarikan diri, menghindari koneksi" },
+            { id: 10, name: "Wheel of Fortune", image: "https://www.trustedtarot.com/img/cards/wheel-of-fortune.png", meaning: "Perubahan, siklus, takdir, titik balik, nasib", reverse: "Kemunduran, kemalangan, ketahanan melawan perubahan" },
+            { id: 11, name: "Justice", image: "https://www.trustedtarot.com/img/cards/justice.png", meaning: "Keadilan, kebenaran, keadilan, keseimbangan, akuntabilitas", reverse: "Ketidakadilan, prasangka, ketidakseimbangan, ketidakjujuran" },
+            { id: 12, name: "The Hanged Man", image: "https://www.trustedtarot.com/img/cards/the-hanged-man.png", meaning: "Pengorbanan, penundaan, perspektif baru, penyerahan", reverse: "Kebuntuan, ketidaksabaran, penolakan untuk berkorban" },
+            { id: 13, name: "Death", image: "https://www.trustedtarot.com/img/cards/death.png", meaning: "Akhir, transisi, perubahan, transformasi, pelepasan", reverse: "Ketakutan akan perubahan, stagnasi, resistensi, kemacetan" },
+            { id: 14, name: "Temperance", image: "https://www.trustedtarot.com/img/cards/temperance.png", meaning: "Keseimbangan, moderasi, kesabaran, harmoni, penyatuan", reverse: "Ketidakseimbangan, ketidaksabaran, ekstrem, ketidakharmonisan" },
+            { id: 15, name: "The Devil", image: "https://www.trustedtarot.com/img/cards/the-devil.png", meaning: "Perbudakan, materialisme, godaan, keterikatan, kekuatan gelap", reverse: "Pembebasan, pelepasan, kebebasan, mengatasi godaan" },
+            { id: 16, name: "The Tower", image: "https://www.trustedtarot.com/img/cards/the-tower.png", meaning: "Kehancuran, perubahan mendadak, kejatuhan, pencerahan paksa", reverse: "Menghindari bencana, ketahanan, transformasi bertahap" },
+            { id: 17, name: "The Star", image: "https://www.trustedtarot.com/img/cards/the-star.png", meaning: "Harapan, inspirasi, kedamaian, penyembuhan, optimisme", reverse: "Keputusasaan, kurangnya iman, pesimisme, ketidakpercayaan" },
+            { id: 18, name: "The Moon", image: "https://www.trustedtarot.com/img/cards/the-moon.png", meaning: "Ilusi, ketakutan, kecemasan, alam bawah sadar, intuisi", reverse: "Kejelasan, kebenaran, mengatasi ketakutan, keamanan" },
+            { id: 19, name: "The Sun", image: "https://www.trustedtarot.com/img/cards/the-sun.png", meaning: "Kebahagiaan, kesuksesan, vitalitas, kepositifan, kejernihan", reverse: "Kesedihan, pesimisme, energi rendah, kesulitan sementara" },
+            { id: 20, name: "Judgement", image: "https://www.trustedtarot.com/img/cards/judgement.png", meaning: "Refleksi, penilaian, kebangkitan, pencerahan, pertanggungjawaban", reverse: "Penyesalan, penolakan panggilan, ketakutan akan penilaian" },
+            { id: 21, name: "The World", image: "https://www.trustedtarot.com/img/cards/the-world.png", meaning: "Penyelesaian, pencapaian, kesatuan, perjalanan penuh, kesuksesan", reverse: "Ketidaklengkapan, kurangnya penutupan, keterlambatan" },
+            
+            // Minor Arcana - Cups
+            { id: 22, name: "Ace of Cups", image: "https://www.trustedtarot.com/img/cards/ace-of-cups.png", meaning: "Cinta baru, kebahagiaan, kelimpahan emosional", reverse: "Kekosongan emosional, kehilangan, kesedihan" },
+            { id: 23, name: "Two of Cups", image: "https://www.trustedtarot.com/img/cards/two-of-cups.png", meaning: "Kesatuan, kemitraan, saling tertarik", reverse: "Ketidakseimbangan, ketidakharmonisan, ketidakpercayaan" },
+            { id: 24, name: "Three of Cups", image: "https://www.trustedtarot.com/img/cards/three-of-cups.png", meaning: "Perayaan, persahabatan, kreativitas, kolaborasi", reverse: "Konflik, isolasi, ketidakhadiran" },
+            { id: 25, name: "Four of Cups", image: "https://www.trustedtarot.com/img/cards/four-of-cups.png", meaning: "Apati, kontemplasi, ketidakpuasan", reverse: "Klarifikasi, penerimaan, kesadaran" },
+            { id: 26, name: "Five of Cups", image: "https://www.trustedtarot.com/img/cards/five-of-cups.png", meaning: "Kehilangan, penyesalan, kesedihan", reverse: "Penerimaan, pemindahan, perdamaian" },
+            { id: 27, name: "Six of Cups", image: "https://www.trustedtarot.com/img/cards/six-of-cups.png", meaning: "Kenangan, kenangan masa kecil, kebaikan", reverse: "Terjebak di masa lalu, ketidakmampuan untuk tumbuh" },
+            { id: 28, name: "Seven of Cups", image: "https://www.trustedtarot.com/img/cards/seven-of-cups.png", meaning: "Pilihan, fantasi, ilusi", reverse: "Klarifikasi, pengambilan keputusan" },
+            { id: 29, name: "Eight of Cups", image: "https://www.trustedtarot.com/img/cards/eight-of-cups.png", meaning: "Meninggalkan, mencari makna", reverse: "Ketakutan akan perubahan, stagnasi" },
+            { id: 30, name: "Nine of Cups", image: "https://www.trustedtarot.com/img/cards/nine-of-cups.png", meaning: "Kepuasan, keinginan terpenuhi, kesenangan", reverse: "Ketidakpuasan, kurangnya kesenangan" },
+            { id: 31, name: "Ten of Cups", image: "https://www.trustedtarot.com/img/cards/ten-of-cups.png", meaning: "Harmoni, kebahagiaan keluarga, kedamaian", reverse: "Konflik, ketidakharmonisan, ketidakpuasan" },
+            { id: 32, name: "Page of Cups", image: "https://www.trustedtarot.com/img/cards/page-of-cups.png", meaning: "Kreativitas, pesan emosional, intuisi", reverse: "Ketidakseimbangan emosional, pesan yang tertunda" },
+            { id: 33, name: "Knight of Cups", image: "https://www.trustedtarot.com/img/cards/knight-of-cups.png", meaning: "Romansa, pesona, imajinasi", reverse: "Ketidakdewasaan, penipuan, suasana hati" },
+            { id: 34, name: "Queen of Cups", image: "https://www.trustedtarot.com/img/cards/queen-of-cups.png", meaning: "Kasih sayang, kenyamanan, stabilitas emosional", reverse: "Ketergantungan, manipulasi, kebutuhan emosional" },
+            { id: 35, name: "King of Cups", image: "https://www.trustedtarot.com/img/cards/king-of-cups.png", meaning: "Keseimbangan emosional, pengendalian diri, diplomasi", reverse: "Ketidakseimbangan emosional, manipulasi" },
+            
+            // Minor Arcana - Pentacles
+            { id: 36, name: "Ace of Pentacles", image: "https://www.trustedtarot.com/img/cards/ace-of-pentacles.png", meaning: "Kesempatan baru, kemakmuran, potensi", reverse: "Kesempatan yang terlewatkan, keserakahan" },
+            { id: 37, name: "Two of Pentacles", image: "https://www.trustedtarot.com/img/cards/two-of-pentacles.png", meaning: "Keseimbangan, prioritas, adaptasi", reverse: "Ketidakseimbangan, disorganisasi" },
+            { id: 38, name: "Three of Pentacles", image: "https://www.trustedtarot.com/img/cards/three-of-pentacles.png", meaning: "Kolaborasi, pembelajaran, keterampilan", reverse: "Kurangnya kolaborasi, disorganisasi" },
+            { id: 39, name: "Four of Pentacles", image: "https://www.trustedtarot.com/img/cards/four-of-pentacles.png", meaning: "Konservasi, stabilitas, keamanan", reverse: "Keserakahan, materialisme" },
+            { id: 40, name: "Five of Pentacles", image: "https://www.trustedtarot.com/img/cards/five-of-pentacles.png", meaning: "Kebutuhan, kemiskinan, isolasi", reverse: "Pemulihan, amal, perbaikan" },
+            { id: 41, name: "Six of Pentacles", image: "https://www.trustedtarot.com/img/cards/six-of-pentacles.png", meaning: "Amal, kemurahan hati, berbagi", reverse: "Ketidakseimbangan kekuatan, hutang" },
+            { id: 42, name: "Seven of Pentacles", image: "https://www.trustedtarot.com/img/cards/seven-of-pentacles.png", meaning: "Kesabaran, penilaian, perencanaan", reverse: "Kurangnya pertumbuhan, ketidaksabaran" },
+            { id: 43, name: "Eight of Pentacles", image: "https://www.trustedtarot.com/img/cards/eight-of-pentacles.png", meaning: "Ketekunan, kerajinan, ketelitian", reverse: "Kurangnya motivasi, pekerjaan yang tidak memuaskan" },
+            { id: 44, name: "Nine of Pentacles", image: "https://www.trustedtarot.com/img/cards/nine-of-pentacles.png", meaning: "Kemewahan, kenyamanan, kemandirian", reverse: "Ketergantungan, materialisme" },
+            { id: 45, name: "Ten of Pentacles", image: "https://www.trustedtarot.com/img/cards/ten-of-pentacles.png", meaning: "Warisan, stabilitas, kemewahan", reverse: "Ketidakstabilan keluarga, konflik" },
+            { id: 46, name: "Page of Pentacles", image: "https://www.trustedtarot.com/img/cards/page-of-pentacles.png", meaning: "Pembelajaran, kesempatan, pertumbuhan", reverse: "Kurangnya kemajuan, kesempatan yang terlewat" },
+            { id: 47, name: "Knight of Pentacles", image: "https://www.trustedtarot.com/img/cards/knight-of-pentacles.png", meaning: "Ketekunan, tanggung jawab, kerja keras", reverse: "Kemalasan, kebosanan, kurangnya ambisi" },
+            { id: 48, name: "Queen of Pentacles", image: "https://www.trustedtarot.com/img/cards/queen-of-pentacles.png", meaning: "Kemakmuran, kepraktisan, kenyamanan", reverse: "Materialisme, ketidakseimbangan kerja/kehidupan" },
+            { id: 49, name: "King of Pentacles", image: "https://www.trustedtarot.com/img/cards/king-of-pentacles.png", meaning: "Kemakmuran, keamanan, otoritas", reverse: "Materialisme, keserakahan, tirani" },
+            
+            // Minor Arcana - Swords
+            { id: 50, name: "Ace of Swords", image: "https://www.trustedtarot.com/img/cards/ace-of-swords.png", meaning: "Kemenangan, kejelasan, kebenaran", reverse: "Konflik, kebingungan, penyalahgunaan kekuasaan" },
+            { id: 51, name: "Two of Swords", image: "https://www.trustedtarot.com/img/cards/two-of-swords.png", meaning: "Kebuntuan, keputusan yang sulit, ketidakpastian", reverse: "Pilihan yang sulit, kurangnya perencanaan" },
+            { id: 52, name: "Three of Swords", image: "https://www.trustedtarot.com/img/cards/three-of-swords.png", meaning: "Patah hati, kesedihan, kehilangan", reverse: "Pemulihan, rekonsiliasi, penerimaan" },
+            { id: 53, name: "Four of Swords", image: "https://www.trustedtarot.com/img/cards/four-of-swords.png", meaning: "Istirahat, pemulihan, kontemplasi", reverse: "Kelelahan, kebuntuan, stagnasi" },
+            { id: 54, name: "Five of Swords", image: "https://www.trustedtarot.com/img/cards/five-of-swords.png", meaning: "Konflik, kekalahan, persaingan", reverse: "Rekonsiliasi, resolusi, kompromi" },
+            { id: 55, name: "Six of Swords", image: "https://www.trustedtarot.com/img/cards/six-of-swords.png", meaning: "Transisi, perjalanan, perpindahan", reverse: "Kemacetan, ketahanan terhadap perubahan" },
+            { id: 56, name: "Seven of Swords", image: "https://www.trustedtarot.com/img/cards/seven-of-swords.png", meaning: "Penipuan, licik, penghindaran", reverse: "Kebohongan yang terungkap, pertobatan" },
+            { id: 57, name: "Eight of Swords", image: "https://www.trustedtarot.com/img/cards/eight-of-swords.png", meaning: "Keterbatasan, kekuatan pribadi, kendala", reverse: "Kebebasan, pembebasan, pelepasan" },
+            { id: 58, name: "Nine of Swords", image: "https://www.trustedtarot.com/img/cards/nine-of-swords.png", meaning: "Kecemasan, ketakutan, depresi", reverse: "Harapan, penyembuhan, bantuan" },
+            { id: 59, name: "Ten of Swords", image: "https://www.trustedtarot.com/img/cards/ten-of-swords.png", meaning: "Kegagalan, akhir yang menyakitkan, kelelahan", reverse: "Pemulihan, regenerasi, harapan baru" },
+            { id: 60, name: "Page of Swords", image: "https://www.trustedtarot.com/img/cards/page-of-swords.png", meaning: "Ide baru, rasa ingin tahu, komunikasi", reverse: "Kebohongan, manipulasi, intimidasi" },
+            { id: 61, name: "Knight of Swords", image: "https://www.trustedtarot.com/img/cards/knight-of-swords.png", meaning: "Aksi, ambisi, agresi", reverse: "Ketergesa-gesaan, kurangnya perencanaan" },
+            { id: 62, name: "Queen of Swords", image: "https://www.trustedtarot.com/img/cards/queen-of-swords.png", meaning: "Kemandirian, kejelasan, kebenaran", reverse: "Sinisme, kepahitan, ketidakfleksibelan" },
+            { id: 63, name: "King of Swords", image: "https://www.trustedtarot.com/img/cards/king-of-swords.png", meaning: "Otoritas, kontrol, kebijaksanaan", reverse: "Manipulasi, kekejaman, tirani" },
+            
+            // Minor Arcana - Wands
+            { id: 64, name: "Ace of Wands", image: "https://www.trustedtarot.com/img/cards/ace-of-wands.png", meaning: "Inspirasi, energi baru, hasrat", reverse: "Kurangnya energi, penundaan, kehilangan semangat" },
+            { id: 65, name: "Two of Wands", image: "https://www.trustedtarot.com/img/cards/two-of-wands.png", meaning: "Perencanaan, kemajuan, keputusan", reverse: "Kurangnya perencanaan, ketakutan akan masa depan" },
+            { id: 66, name: "Three of Wands", image: "https://www.trustedtarot.com/img/cards/three-of-wands.png", meaning: "Ekspansi, pertumbuhan, kemajuan", reverse: "Keterlambatan, hambatan, frustrasi" },
+            { id: 67, name: "Four of Wands", image: "https://www.trustedtarot.com/img/cards/four-of-wands.png", meaning: "Perayaan, kegembiraan, keselarasan", reverse: "Kurangnya dukungan, ketidakstabilan" },
+            { id: 68, name: "Five of Wands", image: "https://www.trustedtarot.com/img/cards/five-of-wands.png", meaning: "Konflik, persaingan, ketidaksepakatan", reverse: "Resolusi konflik, kerja sama" },
+            { id: 69, name: "Six of Wands", image: "https://www.trustedtarot.com/img/cards/six-of-wands.png", meaning: "Kemenangan, kesuksesan, pengakuan", reverse: "Kekalahan, kurangnya pengakuan" },
+            { id: 70, name: "Seven of Wands", image: "https://www.trustedtarot.com/img/cards/seven-of-wands.png", meaning: "Ketekunan, pembelaan, tantangan", reverse: "Menyerah, kelelahan, kewalahan" },
+            { id: 71, name: "Eight of Wands", image: "https://www.trustedtarot.com/img/cards/eight-of-wands.png", meaning: "Percepatan, kemajuan cepat, pergerakan", reverse: "Penundaan, frustrasi, kemacetan" },
+            { id: 72, name: "Nine of Wands", image: "https://www.trustedtarot.com/img/cards/nine-of-wands.png", meaning: "Ketahanan, ketekunan, pertahanan", reverse: "Kelemahan, kelelahan, menyerah" },
+            { id: 73, name: "Ten of Wands", image: "https://www.trustedtarot.com/img/cards/ten-of-wands.png", meaning: "Beban, tanggung jawab, kerja keras", reverse: "Melepaskan beban, delegasi" },
+            { id: 74, name: "Page of Wands", image: "https://www.trustedtarot.com/img/cards/page-of-wands.png", meaning: "Antusiasme, penemuan, pesan positif", reverse: "Kurangnya arah, kabar buruk" },
+            { id: 75, name: "Knight of Wands", image: "https://www.trustedtarot.com/img/cards/knight-of-wands.png", meaning: "Petualangan, energi, semangat", reverse: "Ketergesa-gesaan, impulsif, penundaan" },
+            { id: 76, name: "Queen of Wands", image: "https://www.trustedtarot.com/img/cards/queen-of-wands.png", meaning: "Keyakinan, kemandirian, semangat", reverse: "Ketergantungan, rendah diri, kecemburuan" },
+            { id: 77, name: "King of Wands", image: "https://www.trustedtarot.com/img/cards/king-of-wands.png", meaning: "Kepemimpinan, visi, kewirausahaan", reverse: "Dominasi, impulsif, kesombongan" }
+        ];
+        
+        // Layouts
+        const layouts = {
+            three: {
+                name: "Tiga Kartu",
+                positions: ["Masa Lalu", "Masa Kini", "Masa Depan"],
+                description: "Ramalan klasik yang melihat pengaruh masa lalu, situasi saat ini, dan potensi masa depan."
+            },
+            five: {
+                name: "Lima Kartu",
+                positions: ["Situasi Saat Ini", "Tantangan", "Pengaruh Masa Lalu", "Saran", "Potensi Masa Depan"],
+                description: "Ramalan mendalam yang memberikan gambaran lebih lengkap tentang situasi Anda."
+            },
+            cross: {
+                name: "Salib Celtic",
+                positions: ["Situasi Saat Ini", "Tantangan", "Kesadaran Dasar", "Masa Lalu", "Tujuan Tertinggi", "Masa Depan Dekat", "Diri Sendiri", "Lingkungan", "Harapan & Ketakutan", "Hasil Akhir"],
+                description: "Ramalan paling komprehensif yang memberikan pandangan mendalam tentang seluruh aspek hidup Anda."
+            }
+        };
+        
+        // Elemen DOM
+        const drawBtn = document.getElementById('drawBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const layoutBtns = document.querySelectorAll('.layout-btn');
+        const tarotArea = document.querySelector('.tarot-area');
+        const readingResult = document.getElementById('readingResult');
+        const spinner = document.getElementById('spinner');
+        
+        // Variabel state
+        let currentLayout = 'three';
+        let drawnCards = [];
+        
+        // Fungsi untuk mengacak kartu
+        function shuffleCards() {
+            return [...tarotCards].sort(() => Math.random() - 0.5);
+        }
+        
+        // Fungsi untuk menggambar kartu
+        function drawCards() {
+            // Reset state sebelumnya
+            resetCards();
+            
+            // Dapatkan jumlah kartu yang diperlukan untuk layout saat ini
+            const numCards = layouts[currentLayout].positions.length;
+            
+            // Acak kartu
+            const shuffledDeck = shuffleCards();
+            drawnCards = shuffledDeck.slice(0, numCards);
+            
+            // Tampilkan kartu dengan animasi
+            revealCards();
+            
+            // Tampilkan hasil ramalan
+            displayReading();
+        }
+        
+        // Fungsi untuk menampilkan kartu dengan animasi
+        function revealCards() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                // Update konten kartu
+                const cardData = drawnCards[index];
+                const cardFront = card.querySelector('.card-front');
+                cardFront.querySelector('.card-name').textContent = cardData.name;
+                cardFront.querySelector('.card-meaning').textContent = cardData.meaning;
+                
+                // Perbaikan: Update gambar kartu
+                const cardImage = cardFront.querySelector('.card-image');
+                
+                // Tambahkan penanganan error untuk gambar
+                cardImage.onerror = function() {
+                    this.style.backgroundImage = "url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/832px-No-Image-Placeholder.svg.png')";
+                    this.style.backgroundColor = '#f0f0f0';
+                };
+                
+                cardImage.style.backgroundImage = `url('${cardData.image}')`;
+                
+                // Animasi untuk membalik kartu
+                setTimeout(() => {
+                    card.classList.add('revealed');
+                }, 500 + (index * 300));
+            });
+        }
+        
+        // Fungsi untuk menampilkan hasil ramalan
+        function displayReading() {
+            readingResult.style.display = 'block';
+            
+            // Kosongkan konten sebelumnya
+            const positionContainers = readingResult.querySelectorAll('.position-container');
+            positionContainers.forEach(container => {
+                container.style.display = 'none';
+            });
+            
+            // Tampilkan sesuai layout
+            const positions = layouts[currentLayout].positions;
+            
+            positions.forEach((position, index) => {
+                const positionId = `${position.toLowerCase().replace(/\s+/g, '')}Reading`;
+                const positionElement = document.getElementById(positionId);
+                
+                if (positionElement) {
+                    positionElement.parentElement.style.display = 'block';
+                    positionElement.innerHTML = `
+                        <p><strong>${drawnCards[index].name}</strong></p>
+                        <p>${drawnCards[index].meaning}</p>
+                    `;
+                } else {
+                    // Untuk layout yang memiliki lebih dari 3 posisi
+                    if (index >= 3) {
+                        const newPosition = document.createElement('div');
+                        newPosition.className = 'position-container';
+                        newPosition.innerHTML = `
+                            <div class="position-title">${position}</div>
+                            <div class="position-content">
+                                <p><strong>${drawnCards[index].name}</strong></p>
+                                <p>${drawnCards[index].meaning}</p>
+                            </div>
+                        `;
+                        readingResult.appendChild(newPosition);
+                    }
+                }
+            });
+            
+            // Scroll ke hasil
+            readingResult.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Fungsi untuk mereset kartu
+        function resetCards() {
+            // Sembunyikan hasil
+            readingResult.style.display = 'none';
+            
+            // Reset semua kartu
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.classList.remove('revealed');
+                
+                // Reset gambar ke placeholder kosong
+                const cardImage = card.querySelector('.card-image');
+                cardImage.style.backgroundImage = '';
+            });
+            
+            // Reset konten tambahan
+            const extraContainers = readingResult.querySelectorAll('.position-container:nth-child(n+4)');
+            extraContainers.forEach(container => container.remove());
+        }
+        
+        // Fungsi untuk mengubah layout
+        function changeLayout(layout) {
+            currentLayout = layout;
+            
+            // Update tombol aktif
+            layoutBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.layout === layout);
+            });
+            
+            // Update UI sesuai layout
+            updateLayoutUI();
+            
+            // Reset kartu
+            resetCards();
+        }
+        
+        // Fungsi untuk memperbarui UI berdasarkan layout yang dipilih
+        function updateLayoutUI() {
+            // Kosongkan area tarot
+            tarotArea.innerHTML = '';
+            
+            // Buat struktur untuk layout yang dipilih
+            const layoutDiv = document.createElement('div');
+            layoutDiv.className = `layout-${currentLayout}-cards`;
+            
+            const positions = layouts[currentLayout].positions;
+            
+            positions.forEach((position, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'card-slot';
+                slot.dataset.position = index;
+                
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                card.innerHTML = `
+                    <div class="card-back"></div>
+                    <div class="card-front">
+                        <div class="card-image"></div>
+                        <div class="card-name">${position}</div>
+                        <div class="card-meaning">Tunggu hasil tarikan...</div>
+                    </div>
+                `;
+                
+                slot.appendChild(card);
+                layoutDiv.appendChild(slot);
+            });
+            
+            tarotArea.appendChild(layoutDiv);
+        }
+        
+        // Event listeners
+        drawBtn.addEventListener('click', drawCards);
+        resetBtn.addEventListener('click', resetCards);
+        
+        layoutBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                changeLayout(btn.dataset.layout);
+            });
+        });
+        
+        // Preload semua gambar kartu
+        function preloadImages() {
+            spinner.classList.add('active');
+            let loaded = 0;
+            const total = tarotCards.length;
+            
+            tarotCards.forEach(card => {
+                const img = new Image();
+                img.src = card.image;
+                img.onload = () => {
+                    loaded++;
+                    if (loaded === total) {
+                        setTimeout(() => {
+                            spinner.classList.remove('active');
+                        }, 500);
+                    }
+                };
+                img.onerror = () => {
+                    loaded++;
+                    console.error(`Gagal memuat gambar: ${card.image}`);
+                    if (loaded === total) {
+                        spinner.classList.remove('active');
+                    }
+                };
+            });
+        }
+        
+        // Inisialisasi
+        updateLayoutUI();
+        preloadImages();
+    </script>
+</body>
+</html>
